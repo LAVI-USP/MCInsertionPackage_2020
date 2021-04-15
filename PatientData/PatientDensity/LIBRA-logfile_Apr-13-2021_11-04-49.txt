@@ -1,0 +1,15 @@
+Running LIBRA-1.0.3 (Revision: 487) on MATLAB R2013a
+  >> Analzying single file...
+  >> Processing File 1/1: C:\Users\lucas\Desktop\Codigo uCalc\PatientData\Mammo_1
+   > Checking header
+   > Checking passed.
+...Pre-processing raw mammogram
+...inverting pixel intensities: Mammo_1
+...identifying appropriate training model
+...using model:Hologic-Raw...
+Masking out Breast
+Running 15-class FCM
+...Getting dense-cluster metrics (i.e. hierarchical agglomeration)
+Est PD%: 4.4402%
+Elapsed time is 28.477918 seconds.
+  
