@@ -12,3 +12,11 @@ Disclosure: This package used The Laboratory for Individualized Breast Radiodens
 This package needs the Matlab Runtime 8.1.
 
 Disclaimer: For education purposes only.
+
+
+---
+## Instructions Linux (Ubuntu)
+
+1. Download [Libra](https://www.nitrc.org/projects/cbica_libra/);
+2. Run `InsertLesions.m`;
+3. If you have a bug on `svmclassify` and `svmdecision`, modify these functions to `mod_svmclassify` and `mod_svmdecision`;

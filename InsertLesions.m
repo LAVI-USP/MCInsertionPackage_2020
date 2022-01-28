@@ -1,4 +1,4 @@
-clear all;
+clear;
 close all;
 clc;
 
@@ -15,23 +15,40 @@ Contrast=0.4;for k=2:15 Contrast(k)=Contrast(k-1)*0.85; end
 NumPat=1;
 Save=1;
 
-PathIndividualCalcs='C:\Users\lucas\Desktop\Codigo uCalc\Individual Calcifications';
-PathPatientCases='C:\Users\lucas\Desktop\Codigo uCalc\PatientData';
-PathDensityMask='C:\Users\lucas\Desktop\Codigo uCalc\PatientData\PatientDensity';
-PathOutput='C:\Users\lucas\Desktop\Codigo uCalc\Output';
-PathToolkit='C:\Users\lucas\Desktop\Codigo uCalc\dcmtk-3.6.3-win64-dynamic\bin';
+PathIndividualCalcs='Individual Calcifications';
+PathPatientCases='PatientData';
+PathDensityMask= [PathPatientCases filesep 'PatientDensity'];
+PathOutput='Output';
+PathToolkit=['dcmtk-3.6.6-linux-x86_64-static' filesep 'bin'];
+PathLibra = 'LIBRA-1.0.4';
+
+addpath(genpath(PathLibra));
+addpath('aux_files');
 
 for P=1:NumPat
     
     [Mask,PDFMae]=CreateCluster(PathIndividualCalcs); % Creates the cluster (PDFMae just for visual understanding of the position PDF)
     SimulationInfo{P}.Mask=Mask; % Saves simulation info inside a structure for later reference
     
-    Patient=single(dicomread([PathPatientCases '\Mammo_' num2str(P)])); % Loads image
+    Patient=single(dicomread([PathPatientCases filesep 'Mammo_' num2str(P)])); % Loads image
+    Header = dicominfo([PathPatientCases filesep 'Mammo_' num2str(P)]);
     
-    if exist([PathDensityMask '\Result_Images\Masks_Mammo_' num2str(P) '.mat'])==0
-        system(['libra.exe ' '"' PathPatientCases '/Mammo_' num2str(P) '"' ' ' '"' PathDensityMask '"' ' 1']); % Runs LIBRA to get density mask
+    if exist([PathDensityMask filesep 'Result_Images' filesep 'Masks_Mammo_' num2str(P) '.mat'])==0
+        
+        if strncmp(computer,'PC',2)
+            system(['libra.exe ' '"' PathPatientCases '/Mammo_' num2str(P) '"' ' ' '"' PathDensityMask '"' ' 1']);
+        else  % isunix
+            libra_startup
+        
+            % Runs LIBRA to get density mask
+            libra([PathPatientCases filesep 'Mammo_' num2str(P)], PathDensityMask, 1);
+        end
+        
+        load([PathDensityMask filesep 'Result_Images' filesep 'Masks_Mammo_' num2str(P) '.mat']); % Loads density map
+
+    else
+        load([PathDensityMask filesep 'Result_Images' filesep 'Masks_Mammo_' num2str(P) '.mat']); % Loads density map
     end
-    load([PathDensityMask '\Result_Images\Masks_Mammo_' num2str(P) '.mat']); % Loads density map
     
     %% This makes sure that the cluster is not inserted too close to the skin or
     % too close to the chestwall.
@@ -63,13 +80,20 @@ for P=1:NumPat
         ImgL(Coordinates(1)-ceil(size(Mask,1)/2):Coordinates(1)+floor(size(Mask,1)/2)-1,Coordinates(2)-ceil(size(Mask,1)/2):Coordinates(2)+floor(size(Mask,1)/2)-1)=Patient(Coordinates(1)-ceil(size(Mask,1)/2):Coordinates(1)+floor(size(Mask,1)/2)-1,Coordinates(2)-ceil(size(Mask,1)/2):Coordinates(2)+floor(size(Mask,1)/2)-1).*MaskN;
         if Save
             
-            Address_Original=[PathPatientCases '\Mammo_' num2str(P)];
-            Address_New=[PathOutput '\Mammo_' num2str(P) '_Lesion' num2str(100*Contrast(cc)) '.dcm'];
-            generateDicom(ImgL,Address_Original,Address_New,PathToolkit)
+            if(~exist(PathOutput,'dir'))
+                mkdir(PathOutput)
+            end
+            
+            Address_Original=[PathPatientCases filesep 'Mammo_' num2str(P)];
+            Address_New=[PathOutput filesep 'Mammo_' num2str(P) '_Lesion' num2str(100*Contrast(cc)) '.dcm'];
+            
+            dicomwrite(uint16(ImgL), Address_New, Header, 'CreateMode', 'copy');
+
+            %generateDicom(ImgL,Address_Original,Address_New,PathToolkit)
             
         end
     end
 end
 if Save
-    save([PathOutput '\SimulationInfo.mat'],'SimulationInfo')
+    save([PathOutput filesep 'SimulationInfo.mat'],'SimulationInfo')
 end
